@@ -2,35 +2,57 @@
 #define DEVICE_EVENT_H
 
 #include <cstdint>
-#include <string> // 新增：包含 string
+#include <string>
 
 // 支持的设备类型
 enum class DeviceType {
     Keyboard,
-    Gamepad,
-    Touch,
+    Touch
 };
 
-// 新增：将 DeviceType 转换为字符串的辅助函数
+// 事件类型
+enum class EventType {
+    Button,
+    Directional,
+    TouchDown,
+    TouchUp
+};
+
+// 将设备类型转换为字符串
 inline std::string deviceTypeToString(DeviceType type) {
     switch (type) {
         case DeviceType::Keyboard:
-            return "Keyboard";
-        case DeviceType::Gamepad:
-            return "Gamepad";
+            return "键盘";
         case DeviceType::Touch:
-            return "Touch";
+            return "触屏";
         default:
-            return "Unknown Device";
+            return "未知";
+    }
+}
+
+// 将事件类型转换为字符串
+inline std::string eventTypeToString(EventType type) {
+    switch (type) {
+        case EventType::Button:
+            return "Button";
+        case EventType::Directional:
+            return "Directional";
+        case EventType::TouchDown:
+            return "TouchDown";
+        case EventType::TouchUp:
+            return "TouchUp";
+        default:
+            return "Unknown";
     }
 }
 
 // 统一的底层事件对象
 struct DeviceEvent {
-    DeviceType device; // 事件来源设备
-    int code;          // 键码或按钮编号／触摸类型
-    float value;       // 数值（如压力、轴值，或触摸坐标可拆为两个事件）
-    uint64_t timestamp;// 时间戳
+    DeviceType device;  // 事件来源设备
+    EventType type;     // 事件类型
+    int code;           // 键码或按钮编号
+    float value;        // 数值（如压力、轴值）
+    uint64_t timestamp; // 时间戳
 };
 
 #endif // DEVICE_EVENT_H

@@ -3,9 +3,88 @@
 #include "DeviceEvent.h"
 #include "DeviceManager.h"
 #include "InputProcessor.h"
+#include "KeyboardAdapter.h"
+#include "GamepadAdapter.h"
 #include <iostream>
 #include <string>
 #include <vector>
+#include <thread>
+#include <chrono>
+
+// 辅助函数：获取事件对应的操作名称
+std::string getEventActions(const DeviceEvent& event) {
+    auto actions = ActionMap::instance().getActions(event);
+    if (actions.empty()) {
+        return "未知操作";
+    }
+    
+    std::string result;
+    for (size_t i = 0; i < actions.size(); ++i) {
+        if (i > 0) result += ", ";
+        result += actions[i].name;
+    }
+    return result;
+}
+
+// 辅助函数：检查事件是否被冲突解决策略过滤
+bool isEventFiltered(const DeviceEvent& event, const ConflictResolver& resolver) {
+    return !resolver.shouldProcessInput(event);
+}
+
+void handleEvents(const std::vector<DeviceEvent>& events,InputProcessor& inputProcessor){
+      // 处理每个事件
+    for (const auto& event : events) {
+      bool isFiltered = isEventFiltered(event, inputProcessor.getConflictResolver());
+      std::cout << "收到事件: " << deviceTypeToString(event.device) 
+                << " -> " << getEventActions(event)
+                << (isFiltered ? " [被冲突策略过滤]" : "") << std::endl;
+      
+      if (!isFiltered) {
+        inputProcessor.processInput(event);
+      }
+    }
+}
+
+std::vector<DeviceEvent> getMockedEvents(){
+    std::vector<DeviceEvent> events;
+    uint64_t baseTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+
+    // 手柄触摸按下
+    DeviceEvent touchDown;
+    touchDown.device = DeviceType::Touch;
+    touchDown.type = EventType::TouchDown;
+    touchDown.code = 2001;
+    touchDown.value = 1.0f;
+    touchDown.timestamp = baseTime + 100;
+    events.push_back(touchDown);
+
+    // 手柄按下上方向键（应该被过滤）
+    DeviceEvent gamepadUp;
+    gamepadUp.device = DeviceType::Keyboard;
+    gamepadUp.type = EventType::Directional;
+    gamepadUp.code = 32;
+    gamepadUp.value = 1.0f;
+    gamepadUp.timestamp = baseTime + 200;
+    events.push_back(gamepadUp);
+
+    // 手柄触摸抬起
+    DeviceEvent touchUp;
+    touchUp.device = DeviceType::Touch;
+    touchUp.type = EventType::TouchUp;
+    touchUp.code = 2002;
+
+    touchUp.value = 0.0f;
+    touchUp.timestamp = baseTime + 300;
+    events.push_back(touchUp);
+
+    // 手柄再次按下上方向键（应该被处理）
+
+    events.push_back(gamepadUp);
+
+    return events;
+}
 
 int main() {
   // 1. 初始化核心组件
@@ -29,65 +108,59 @@ int main() {
 
   // 3. 添加冲突解决策略
   std::cout << "\n--- 添加冲突解决策略 ---" << std::endl;
+  inputProcessor.getConflictResolver().addStrategy(
+    std::make_shared<TouchVsDirectionalStrategy>()
+  );
   
-  // 添加触屏滑动时禁用手柄方向键策略
-  std::cout << "添加策略: TouchSlideGamepadFilterStrategy" << std::endl;
-  inputProcessor.addConflictStrategy(std::make_shared<TouchSlideGamepadFilterStrategy>());
+  auto mockedEvents = getMockedEvents();
+  handleEvents(mockedEvents, inputProcessor);
 
-  // 立即测试 TouchSlideGamepadFilterStrategy
-  std::cout << "\n--- 测试 TouchSlideGamepadFilterStrategy ---" << std::endl;
-  
-  // 测试场景1：触屏滑动时的手柄方向键输入
-  std::cout << "测试场景1：触屏滑动时的手柄方向键输入" << std::endl;
-  DeviceEvent touch_slide_test{DeviceType::Touch, 1};    // 触屏滑动
-  DeviceEvent gamepad_up_test{DeviceType::Gamepad, 1001}; // 手柄上方向键 (MoveForward)
-  DeviceEvent gamepad_down_test{DeviceType::Gamepad, 1002}; // 手柄下方向键 (MoveBackward)
-  
-  std::cout << "1.1 先触发触屏滑动（应该执行 Jump 动作）:" << std::endl;
-  inputProcessor.processInput(touch_slide_test);
-  
-  std::cout << "1.2 触屏滑动时，尝试手柄上方向键（应该被忽略，不执行 MoveForward）:" << std::endl;
-  inputProcessor.processInput(gamepad_up_test);
-  
-  std::cout << "1.3 触屏滑动时，尝试手柄下方向键（应该被忽略，不执行 MoveBackward）:" << std::endl;
-  inputProcessor.processInput(gamepad_down_test);
-  
-  // 测试场景2：触屏抬起后的手柄方向键输入
-  std::cout << "\n测试场景2：触屏抬起后的手柄方向键输入" << std::endl;
-  DeviceEvent touch_release_test{DeviceType::Touch, 0};  // 触屏抬起
-  
-  std::cout << "2.1 触发触屏抬起（重置滑动状态）:" << std::endl;
-  inputProcessor.processInput(touch_release_test);
-  
-  std::cout << "2.2 触屏抬起后，尝试手柄上方向键（应该执行 MoveForward）:" << std::endl;
-  inputProcessor.processInput(gamepad_up_test);
-  
-  // 测试场景3：触屏滑动时的其他手柄输入
-  std::cout << "\n测试场景3：触屏滑动时的其他手柄输入" << std::endl;
-  DeviceEvent touch_slide_test2{DeviceType::Touch, 1};   // 触屏滑动
-  DeviceEvent gamepad_button_test{DeviceType::Gamepad, 0}; // 手柄按钮（非方向键，Jump）
-  
-  std::cout << "3.1 再次触发触屏滑动（应该执行 Jump）:" << std::endl;
-  inputProcessor.processInput(touch_slide_test2);
-  
-  std::cout << "3.2 触屏滑动时，尝试手柄按钮（应该执行 Jump，因为不是方向键）:" << std::endl;
-  inputProcessor.processInput(gamepad_button_test);
+  // 4. 注册设备适配器
+  std::cout << "\n--- 注册设备适配器 ---" << std::endl;
+  deviceManager.registerAdapter(std::make_shared<KeyboardAdapter>());
+  deviceManager.registerAdapter(std::make_shared<GamepadAdapter>());
 
-  // 4. 演示运行时动态切换设备类型
-  std::cout << "\n--- 测试：动态设备切换 ---" << std::endl;
-  deviceManager.setActiveDevice(DeviceType::Keyboard);
-  DeviceEvent kb_jump_event{DeviceType::Keyboard, 32}; // 空格键
-  inputProcessor.processInput(kb_jump_event);
+  // 5. 主循环：处理设备事件
+  std::cout << "\n--- 开始处理设备事件 ---" << std::endl;
+  std::cout << "按 Ctrl+C 退出" << std::endl;
 
-  deviceManager.setActiveDevice(DeviceType::Gamepad);
-  DeviceEvent gp_jump_event{DeviceType::Gamepad, 0}; // 手柄按钮 0 (Jump)
-  inputProcessor.processInput(gp_jump_event);
+  // 模拟设备切换
+  std::vector<DeviceType> devices = {
+    DeviceType::Keyboard,
+    DeviceType::Touch
+  };
+  size_t currentDeviceIndex = 0;
+  uint64_t lastSwitchTime = 0;
 
-  deviceManager.setActiveDevice(DeviceType::Touch);
-  DeviceEvent touch_swipe_event{DeviceType::Touch, 1}; // 触屏滑动 (Jump)
-  inputProcessor.processInput(touch_swipe_event);
+  while (true) {
+    uint64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+    
+    // 每10秒切换一次设备
+    if (currentTime - lastSwitchTime >= 10000) {
+      // 禁用当前设备
+      deviceManager.enableDevice(devices[currentDeviceIndex], false);
+      
+      // 切换到下一个设备
+      currentDeviceIndex = (currentDeviceIndex + 1) % devices.size();
+      deviceManager.enableDevice(devices[currentDeviceIndex], true);
+      
+      std::cout << "\n=== 切换到设备: " 
+                << deviceTypeToString(devices[currentDeviceIndex]) 
+                << " ===" << std::endl;
+      
+      lastSwitchTime = currentTime;
+    }
 
-  std::cout << "\n=== 测试完成 ===" << std::endl;
+    // 获取所有设备的事件
+    auto events = deviceManager.pollEvents();
+    handleEvents(events,inputProcessor);
+
+  
+    // 控制帧率
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));
+  }
 
   return 0;
 }

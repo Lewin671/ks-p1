@@ -47,6 +47,9 @@ public:
         conflictResolver.addStrategy(strategy);
     }
 
+    // 获取冲突解决器
+    ConflictResolver& getConflictResolver() { return conflictResolver; }
+
 private:
     const ActionMap& actionMap;
     ConflictResolver conflictResolver;

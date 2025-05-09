@@ -1,30 +1,37 @@
 {
     "actions": {
-        "Jump": {},
-        "Attack": {},
-        "MoveForward": {},
-        "MoveBackward": {},
+        "Jump": {
+            "description": "跳跃"
+        },
+        "Attack": {
+            "description": "攻击"
+        },
+        "MoveForward": {
+            "description": "向前移动"
+        },
+        "MoveBackward": {
+            "description": "向后移动"
+        },
         "StrafeLeft": {},
-        "StrafeRight": {}
+        "StrafeRight": {},
+        "Touch": {
+            "description": "触摸事件"
+        }
     },
     "bindings": {
         "Keyboard": {
             "32": ["Jump"],
-            "75": ["Attack"],
             "87": ["MoveForward"],
             "83": ["MoveBackward"],
-            "65": ["StrafeLeft"],
-            "68": ["StrafeRight"]
-        },
-        "Gamepad": {
-            "0": ["Jump"],
-            "2": ["Attack"],
-            "1001": ["MoveForward"],
-            "1002": ["MoveBackward"]
+            "74": ["Attack"]
         },
         "Touch": {
-            "1": ["Jump"],
-            "2": ["Attack"]
+            "0": ["Jump", "Attack"],
+            "1001": ["MoveForward"],
+            "1002": ["MoveBackward"],
+            "1": ["Attack"],
+            "2001": ["Touch"],
+            "2002": ["Touch"]
         }
     }
 }

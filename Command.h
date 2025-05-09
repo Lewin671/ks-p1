@@ -2,8 +2,9 @@
 #define COMMAND_H
 
 #include "ActionMap.h" // 用于GameAction
-#include <iostream>    // 用于std::cout示例命令
-#include <memory>      // 用于std::shared_ptr
+#include "DeviceEvent.h"
+#include <iostream> // 用于std::cout示例命令
+#include <memory>   // 用于std::shared_ptr
 #include <string>
 #include <vector>
 
@@ -31,10 +32,18 @@ public:
   void execute(/* GameContext& context */) override {
     // 实际游戏逻辑会在这里被调用
     // 例如：context.getPlayer()->performAction(action.name);
-    std::cout << "执行动作: " << action.name << " (由设备触发: "
-              << deviceTypeToString(triggerEvent.device) // 修改：直接调用函数
-              << ", 代码: " << triggerEvent.code
-              << ", 值: " << triggerEvent.value << ")" << std::endl;
+    if (triggerEvent.device == DeviceType::Touch &&
+        (triggerEvent.type == EventType::TouchDown ||
+         triggerEvent.type == EventType::TouchUp)) {
+      std::cout << "执行动作: " << action.name
+                << " (由设备触发: " << deviceTypeToString(triggerEvent.device)
+                << ", 事件类型:" << eventTypeToString(triggerEvent.type) << ")"
+                << std::endl;
+    } else {
+      std::cout << "执行动作: " << action.name
+                << " (由设备触发: " << deviceTypeToString(triggerEvent.device)
+                << ")" << std::endl;
+    }
   }
 
   GameAction getAction() const override { return action; }

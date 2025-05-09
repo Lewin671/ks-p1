@@ -22,7 +22,6 @@ add_executable(InputSystem
     DeviceManager.cpp
     GamepadAdapter.cpp
     KeyboardAdapter.cpp
-    TouchAdapter.cpp
     main.cpp
 )
 

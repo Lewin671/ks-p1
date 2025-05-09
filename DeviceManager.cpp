@@ -1,7 +1,6 @@
 #include "DeviceManager.h"
 #include "KeyboardAdapter.h" // 用于 dynamic_cast
 #include "GamepadAdapter.h"  // 用于 dynamic_cast
-#include "TouchAdapter.h"    // 用于 dynamic_cast
 #include <vector>           // 用于 std::vector
 #include <algorithm>        // 用于 std::remove，虽然已在.h中包含，但明确包含是个好习惯
 #include <mutex>            // 用于 std::lock_guard，虽然已在.h中包含
@@ -50,12 +49,8 @@ void DeviceManager::enableDevice(DeviceType type, bool on) {
             if (dynamic_cast<KeyboardAdapter*>(adapter.get())) {
                 typeMatch = true;
             }
-        } else if (type == DeviceType::Gamepad) {
-            if (dynamic_cast<GamepadAdapter*>(adapter.get())) {
-                typeMatch = true;
-            }
         } else if (type == DeviceType::Touch) {
-            if (dynamic_cast<TouchAdapter*>(adapter.get())) {
+            if (dynamic_cast<GamepadAdapter*>(adapter.get())) {
                 typeMatch = true;
             }
         }

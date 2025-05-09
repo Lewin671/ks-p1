@@ -11,17 +11,6 @@
 struct GameAction {
     std::string name;
     // 可以添加其他与动作相关的属性，如是否是持续性动作等
-
-    // 新增：静态常量表示未知动作
-    static const GameAction Unknown;
-
-    // 新增：比较操作符
-    bool operator==(const GameAction& other) const {
-        return name == other.name;
-    }
-    bool operator!=(const GameAction& other) const {
-        return !(*this == other);
-    }
 };
 
 // 将物理输入映射到逻辑动作
@@ -36,25 +25,11 @@ public:
     // 初始化动作映射（从配置文件加载）
     void initialize(const std::string& bindingsFilePath);
 
-    // 根据设备事件查找对应的游戏动作
-    GameAction getAction(DeviceType device, int code) const;
+    // 根据设备事件获取所有对应的动作
+    std::vector<GameAction> getActions(const DeviceEvent& event) const;
 
     // 获取所有绑定
     std::map<std::pair<DeviceType, int>, std::vector<std::string>> getAllBindings() const { return bindings; }
-
-    // 根据设备事件获取所有对应的动作
-    std::vector<GameAction> getActions(const DeviceEvent& event) const {
-        std::vector<GameAction> actions;
-        auto it = bindings.find({event.device, event.code});
-        if (it != bindings.end()) {
-            for (const auto& actionName : it->second) {
-                GameAction action;
-                action.name = actionName;
-                actions.push_back(action);
-            }
-        }
-        return actions;
-    }
 
 private:
     // 私有构造函数，防止外部创建实例
