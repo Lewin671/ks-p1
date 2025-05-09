@@ -10,7 +10,7 @@
 
 ### 1. 整体架构设计
 
-[架构图](./doc/architecture.png)
+![架构图](./doc/architecture.png)
 
 ### 2. 核心类设计
 
