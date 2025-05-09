@@ -21,7 +21,6 @@ add_executable(InputSystem
     ConflictResolver.cpp
     DeviceManager.cpp
     GamepadAdapter.cpp
-    InputProcessor.cpp
     KeyboardAdapter.cpp
     TouchAdapter.cpp
     main.cpp
