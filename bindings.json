@@ -1,0 +1,30 @@
+{
+    "actions": {
+        "Jump": {},
+        "Attack": {},
+        "MoveForward": {},
+        "MoveBackward": {},
+        "StrafeLeft": {},
+        "StrafeRight": {}
+    },
+    "bindings": {
+        "Keyboard": {
+            "32": ["Jump"],
+            "75": ["Attack"],
+            "87": ["MoveForward"],
+            "83": ["MoveBackward"],
+            "65": ["StrafeLeft"],
+            "68": ["StrafeRight"]
+        },
+        "Gamepad": {
+            "0": ["Jump"],
+            "2": ["Attack"],
+            "1001": ["MoveForward"],
+            "1002": ["MoveBackward"]
+        },
+        "Touch": {
+            "1": ["Jump"],
+            "2": ["Attack"]
+        }
+    }
+}
